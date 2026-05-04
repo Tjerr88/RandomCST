@@ -78,7 +78,7 @@ summary {
   justify-content:space-between; align-items:flex-start;
 }
 summary::-webkit-details-marker { display:none; }
-summary::after { content:"▶"; color:var(--muted); transition:transform .2s ease; margin-top:1px; flex:0 0 auto; }
+summary::after { content:"â–¶"; color:var(--muted); transition:transform .2s ease; margin-top:1px; flex:0 0 auto; }
 details[open] summary::after { transform:rotate(90deg); }
 .ex-title { font-weight:820; letter-spacing:-.01em; }
 .ex-meta { color:var(--muted); font-size:12px; line-height:1.45; margin-top:3px; }
@@ -134,15 +134,30 @@ details[open] summary::after { transform:rotate(90deg); }
           <div class="label">Exercises per category</div>
           <div>
             <label class="small">Rhythmic</label>
-            <select id="rhythmicCount"><option>1</option><option selected>2</option><option>3</option></select>
+            <select id="rhythmicCount">
+              <option value="1">1</option>
+              <option value="2" selected>2</option>
+              <option value="3">3</option>
+              <option value="random">Random</option>
+            </select>
           </div>
           <div>
             <label class="small">Ballistic</label>
-            <select id="ballisticCount"><option>1</option><option selected>2</option><option>3</option></select>
+            <select id="ballisticCount">
+              <option value="1">1</option>
+              <option value="2" selected>2</option>
+              <option value="3">3</option>
+              <option value="random">Random</option>
+            </select>
           </div>
           <div>
             <label class="small">Grind</label>
-            <select id="grindingCount"><option>1</option><option selected>2</option><option>3</option></select>
+            <select id="grindingCount">
+              <option value="1">1</option>
+              <option value="2" selected>2</option>
+              <option value="3">3</option>
+              <option value="random">Random</option>
+            </select>
           </div>
         </div>
 
@@ -391,7 +406,7 @@ function shuffle(arr) {
 }
 function cleanText(value) {
   return String(value ?? "")
-    .replace(/[â€“â€”]/g, "-")
+    .replace(/[Ã¢â‚¬â€œÃ¢â‚¬â€]/g, "-")
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -413,15 +428,23 @@ function getDuration() {
   const v = document.getElementById("duration").value;
   return v === "random" ? rand([15,20,25,30]) : Number(v);
 }
+function formatClubType(clubType) {
+  if(clubType === "single") return "Single";
+  if(clubType === "double") return "Double";
+  if(clubType === "2h") return "2H";
+  return String(clubType ?? "").toUpperCase();
+}
 function getCount(bucket) {
   const id = bucket === "Rhythmic" ? "rhythmicCount" : bucket === "Ballistic" ? "ballisticCount" : "grindingCount";
-  return Math.max(1, Math.min(3, Number(document.getElementById(id).value) || 1));
+  const value = document.getElementById(id).value;
+  if(value === "random") return rand([1,2,3]);
+  return Math.max(1, Math.min(3, Number(value) || 1));
 }
 function pickSubcategories(bucket, count, clubType) {
   const order = SUBCATEGORY_ORDER[bucket] || [];
   const usable = order.filter(sub => CLUB_EXERCISES.some(ex => ex.bucket === bucket && ex.subcategory === sub && clubCompatible(ex, clubType)));
   const base = usable.length ? usable : order;
-  if(count >= base.length) return base.slice(0, count);
+  if(count >= base.length) return shuffle(base).slice(0, base.length);
   return shuffle(base).slice(0, count);
 }
 function pickExercise(bucket, subcategory, clubType, alreadyPicked) {
@@ -465,7 +488,7 @@ function renderWorkout(workout) {
       <div>
         <h2>Generated workout</h2>
         <div class="big">${workout.duration} min</div>
-        <p class="small">Club type: ${workout.clubType.toUpperCase()} | Exercises: ${totalExercises}</p>
+        <p class="small">Club type: ${formatClubType(workout.clubType)} | Exercises: ${totalExercises}</p>
       </div>
       <span class="pill">Quality circuit</span>
     </div>
@@ -497,11 +520,11 @@ function renderWorkout(workout) {
     </div>
     <div class="group" style="margin-top:14px;">
       <div class="label">Order</div>
-      <p>${order.map(ex => cleanText(ex.name)).join(" → ")}</p>
+      <p>${order.map(ex => cleanText(ex.name)).join(" -> ")}</p>
     </div>
   `;
   window.currentWorkoutText = [
-    `CST one-off workout - ${workout.duration} min - ${workout.clubType.toUpperCase()}`,
+    `CST one-off workout - ${workout.duration} min - ${formatClubType(workout.clubType)}`,
     ...BUCKET_ORDER.flatMap(bucket => [
       "",
       bucket === "Grinding" ? "Grind:" : bucket + ":",
