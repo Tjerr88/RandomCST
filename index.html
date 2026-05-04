@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CST One-Off Workout Generator</title>
+<style>
+:root {
+  --bg:#0c1217; --bg2:#121c23; --surface:rgba(19,27,34,.92);
+  --surface2:rgba(15,21,28,.92); --surface3:rgba(255,255,255,.035);
+  --text:#edf3f7; --muted:#9caab8; --muted2:#748292;
+  --line:rgba(165,188,206,.14); --line2:rgba(165,188,206,.24);
+  --acc:#8fb8d8; --good:#7dcf9b; --warn:#e6c87d; --danger:#d98b89;
+  --shadow:0 18px 48px rgba(0,0,0,.26);
+}
+* { box-sizing:border-box; }
+body {
+  margin:0; padding:18px 14px 34px;
+  font-family:Inter, "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  background: radial-gradient(circle at top, rgba(143,184,216,.10), transparent 38%),
+              linear-gradient(180deg, var(--bg2) 0%, var(--bg) 52%, #0a0f14 100%);
+  color:var(--text);
+}
+.wrap { max-width:980px; margin:0 auto; display:grid; gap:14px; }
+.card {
+  background:var(--surface); border:1px solid var(--line); border-radius:24px;
+  padding:18px; box-shadow:var(--shadow); backdrop-filter: blur(12px);
+}
+.hero {
+  background: radial-gradient(circle at top right, rgba(143,184,216,.13), transparent 30%),
+              linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.015)), var(--surface);
+}
+h1 { margin:0; font-size:28px; line-height:1.05; letter-spacing:-.03em; }
+h2 { margin:0 0 10px; font-size:16px; letter-spacing:-.01em; }
+p { margin:0; color:var(--muted); line-height:1.55; font-size:14px; }
+.grid { display:grid; gap:14px; grid-template-columns:1fr; }
+@media (min-width:880px) { .grid { grid-template-columns:.78fr 1.22fr; align-items:start; } }
+.row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+.settings { display:grid; gap:14px; }
+.group {
+  border:1px solid var(--line); border-radius:18px; padding:14px;
+  background:rgba(255,255,255,.025); display:grid; gap:10px;
+}
+.label { color:var(--muted2); font-size:12px; text-transform:uppercase; letter-spacing:.08em; }
+.toggle-list { display:grid; gap:8px; }
+.toggle {
+  display:flex; justify-content:space-between; align-items:center; gap:12px;
+  border:1px solid var(--line); border-radius:14px; padding:11px 12px;
+  background:rgba(255,255,255,.025); color:var(--text); font-weight:700;
+}
+input[type="checkbox"] { width:18px; height:18px; accent-color:#8fb8d8; }
+select {
+  width:100%; padding:11px 12px; border-radius:14px; border:1px solid rgba(255,255,255,.11);
+  background:#121c23; color:var(--text); font-weight:700;
+}
+.btn {
+  appearance:none; border:1px solid rgba(143,184,216,.34); background:rgba(143,184,216,.15);
+  color:var(--text); border-radius:14px; padding:13px 16px; min-height:48px;
+  font-weight:820; cursor:pointer; transition:.18s ease transform, .18s ease background;
+}
+.btn:hover { transform:translateY(-1px); background:rgba(143,184,216,.20); }
+.btn.secondary { border-color:rgba(255,255,255,.10); background:rgba(255,255,255,.045); }
+.btn.danger { border-color:rgba(217,139,137,.30); background:rgba(217,139,137,.10); }
+.pill {
+  display:inline-flex; align-items:center; gap:6px; padding:7px 11px; border-radius:999px;
+  border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.035);
+  color:var(--muted); font-size:12px; font-weight:700;
+}
+.pill strong { color:var(--text); }
+.workout-head { display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; align-items:flex-start; }
+.big { font-size:34px; line-height:1; font-weight:880; letter-spacing:-.04em; }
+.exercise {
+  border:1px solid var(--line); background:linear-gradient(180deg, rgba(255,255,255,.028), rgba(255,255,255,.014));
+  border-radius:18px; overflow:hidden;
+}
+summary {
+  cursor:pointer; list-style:none; padding:14px 15px; display:flex; gap:10px;
+  justify-content:space-between; align-items:flex-start;
+}
+summary::-webkit-details-marker { display:none; }
+summary::after { content:"▶"; color:var(--muted); transition:transform .2s ease; margin-top:1px; flex:0 0 auto; }
+details[open] summary::after { transform:rotate(90deg); }
+.ex-title { font-weight:820; letter-spacing:-.01em; }
+.ex-meta { color:var(--muted); font-size:12px; line-height:1.45; margin-top:3px; }
+.ex-body {
+  border-top:1px solid var(--line); padding:12px 15px 15px;
+  color:var(--muted); font-size:13px; line-height:1.55;
+}
+.stack { display:grid; gap:10px; }
+.bucket-title { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:14px; margin-bottom:8px; }
+.bucket-title:first-child { margin-top:0; }
+.warn {
+  border:1px solid rgba(230,200,125,.28); background:rgba(230,200,125,.08);
+  color:var(--warn); border-radius:16px; padding:12px 13px; font-size:13px; line-height:1.45;
+}
+.small { color:var(--muted); font-size:12px; line-height:1.5; }
+.empty { display:grid; gap:10px; place-items:start; min-height:220px; align-content:center; }
+@media (max-width:600px) {
+  body { padding:10px 10px 26px; }
+  .card { padding:14px; border-radius:20px; }
+  h1 { font-size:22px; }
+  .big { font-size:28px; }
+  .btn { width:100%; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <section class="card hero">
+    <div class="row" style="justify-content:space-between; align-items:flex-start;">
+      <div style="display:grid; gap:7px; max-width:680px;">
+        <div class="label">CST one-off session</div>
+        <h1>Random Clubbell Workout Generator</h1>
+        <p>Builds one loose CST-style Clubbell session for clients: choose allowed club types, how many exercises per category, and session time. No progression, no saved cycle.</p>
+      </div>
+      <span class="pill">Standalone</span>
+    </div>
+  </section>
+
+  <section class="grid">
+    <aside class="card">
+      <h2>Settings</h2>
+      <div class="settings">
+        <div class="group">
+          <div class="label">Allowed club types</div>
+          <div class="toggle-list">
+            <label class="toggle">Single Club <input type="checkbox" id="single" checked></label>
+            <label class="toggle">Double Club <input type="checkbox" id="double" checked></label>
+            <label class="toggle">2-Hand Club <input type="checkbox" id="twohand" checked></label>
+          </div>
+        </div>
+
+        <div class="group">
+          <div class="label">Exercises per category</div>
+          <div>
+            <label class="small">Rhythmic</label>
+            <select id="rhythmicCount"><option>1</option><option selected>2</option><option>3</option></select>
+          </div>
+          <div>
+            <label class="small">Ballistic</label>
+            <select id="ballisticCount"><option>1</option><option selected>2</option><option>3</option></select>
+          </div>
+          <div>
+            <label class="small">Grind</label>
+            <select id="grindingCount"><option>1</option><option selected>2</option><option>3</option></select>
+          </div>
+        </div>
+
+        <div class="group">
+          <div class="label">Time</div>
+          <select id="duration">
+            <option value="random" selected>Random: 15 / 20 / 25 / 30 min</option>
+            <option value="15">15 min</option>
+            <option value="20">20 min</option>
+            <option value="25">25 min</option>
+            <option value="30">30 min</option>
+          </select>
+        </div>
+
+        <div class="row">
+          <button class="btn" id="generateBtn">Generate workout</button>
+          <button class="btn secondary" id="copyBtn">Copy</button>
+          <button class="btn danger" id="resetBtn">Clear</button>
+        </div>
+        <p class="small">Use quality work. Stop before speed, posture, grip, or breathing breaks. For mixed groups, coach the easiest safe version of the selected movement.</p>
+      </div>
+    </aside>
+
+    <main class="card">
+      <div id="output" class="empty">
+        <h2>Your workout</h2>
+        <p>Choose the checkboxes and press Generate workout.</p>
+      </div>
+    </main>
+  </section>
+</div>
+
+<script>
+const CLUB_EXERCISES = [
+  { name:"Front Swing", bucket:"Rhythmic", subcategory:"swing", start:"ready", end:"ready", modes:["single","double"] },
+  { name:"Two-Handed Front Swing", bucket:"Rhythmic", subcategory:"swing", start:"ready", end:"ready", modes:["2h"] },
+  { name:"Side Swing", bucket:"Rhythmic", subcategory:"swing", start:"ready", end:"ready", modes:["single","double"] },
+  { name:"Side Semi Circle Swing", bucket:"Rhythmic", subcategory:"swing", start:"ready", end:"ready", modes:["single","double"] },
+  { name:"Pirouette Swing", bucket:"Rhythmic", subcategory:"swing", start:"ready", end:"ready", modes:["single","double"] },
+
+  { name:"Front Pendulum", bucket:"Rhythmic", subcategory:"pendulum", start:"ready", end:"ready", modes:["single","double"] },
+  { name:"Two-Handed Front Pendulum", bucket:"Rhythmic", subcategory:"pendulum", start:"ready", end:"ready", modes:["2h"] },
+  { name:"Inside Pendulum", bucket:"Rhythmic", subcategory:"pendulum", start:"ready", end:"ready", modes:["single","double"] },
+  { name:"Double Side Pendulum", bucket:"Rhythmic", subcategory:"pendulum", start:"ready", end:"ready", modes:["double"] },
+  { name:"Two-Handed Guard Inside Pendulum", bucket:"Rhythmic", subcategory:"pendulum", start:"guard", end:"guard", modes:["2h"] },
+  { name:"Outside Pendulum", bucket:"Rhythmic", subcategory:"pendulum", start:"ready", end:"ready", modes:["single","double"] },
+  { name:"Two-Handed Guard Outside Pendulum", bucket:"Rhythmic", subcategory:"pendulum", start:"guard", end:"guard", modes:["2h"] },
+  { name:"Lunge-Step Pendulum", bucket:"Rhythmic", subcategory:"pendulum", start:"ready", end:"ready", modes:["single","double"] },
+  { name:"Two-Handed Guard Lunge-Step Pendulum", bucket:"Rhythmic", subcategory:"pendulum", start:"guard", end:"guard", modes:["2h"] },
+  { name:"Side-Step Pendulum", bucket:"Rhythmic", subcategory:"pendulum", start:"ready", end:"ready", modes:["single","double"] },
+  { name:"Two-Handed Guard Side-Step Pendulum", bucket:"Rhythmic", subcategory:"pendulum", start:"guard", end:"guard", modes:["2h"] },
+
+  { name:"Front Circle", bucket:"Rhythmic", subcategory:"circle", start:"ready", end:"ready", modes:["single","double"] },
+  { name:"Front 3/4 Circle", bucket:"Rhythmic", subcategory:"circle", start:"ready", end:"ready", modes:["single","double"] },
+  { name:"Back Circle", bucket:"Rhythmic", subcategory:"circle", start:"ready", end:"ready", modes:["single","double"] },
+  { name:"Back 3/4 Circle", bucket:"Rhythmic", subcategory:"circle", start:"ready", end:"ready", modes:["single","double"] },
+  { name:"Inside Circle", bucket:"Rhythmic", subcategory:"circle", start:"ready", end:"ready", modes:["single","double"] },
+  { name:"Outside Circle", bucket:"Rhythmic", subcategory:"circle", start:"ready", end:"ready", modes:["single","double"] },
+  { name:"Two-Handed Side Circle", bucket:"Rhythmic", subcategory:"circle", start:"ready", end:"ready", modes:["2h"] },
+  { name:"Alternating Circles: Front Stroke and Backstroke", bucket:"Rhythmic", subcategory:"circle", start:"ready", end:"ready", modes:["double"] },
+
+  { name:"Front Clean to Order Position", bucket:"Ballistic", subcategory:"clean", start:"ready", end:"order", modes:["single","double"] },
+  { name:"Two-Handed Front Clean to Order Position", bucket:"Ballistic", subcategory:"clean", start:"ready", end:"order", modes:["2h"] },
+  { name:"Front Clean to Shoulder Park", bucket:"Ballistic", subcategory:"clean", start:"ready", end:"shoulder", modes:["single","double"] },
+  { name:"Two-Handed Front Clean to Shoulder Park", bucket:"Ballistic", subcategory:"clean", start:"ready", end:"shoulder", modes:["2h"] },
+  { name:"Front Clean to Flag Position", bucket:"Ballistic", subcategory:"clean", start:"ready", end:"flag", modes:["single","double"] },
+  { name:"Two-Handed Front Clean to Flag Position", bucket:"Ballistic", subcategory:"clean", start:"ready", end:"flag", modes:["2h"] },
+  { name:"Front Clean to Back Position", bucket:"Ballistic", subcategory:"clean", start:"ready", end:"back", modes:["single","double"] },
+  { name:"Two-Handed Front Clean to Back Position", bucket:"Ballistic", subcategory:"clean", start:"ready", end:"back", modes:["2h"] },
+  { name:"Side Clean to Guard Position", bucket:"Ballistic", subcategory:"clean", start:"ready", end:"guard", modes:["single","double"] },
+  { name:"Side Clean to Shoulder Park", bucket:"Ballistic", subcategory:"clean", start:"ready", end:"shoulder", modes:["single","double"] },
+  { name:"Side Clean to Back Position", bucket:"Ballistic", subcategory:"clean", start:"ready", end:"back", modes:["single","double"] },
+  { name:"Side Clean to Side Flag", bucket:"Ballistic", subcategory:"clean", start:"ready", end:"flag", modes:["single","double"] },
+
+  { name:"Front Torch Jerk", bucket:"Ballistic", subcategory:"jerk", start:"torch", end:"torch", modes:["single","double"] },
+  { name:"Two-Handed Front Torch Jerk", bucket:"Ballistic", subcategory:"jerk", start:"torch", end:"torch", modes:["2h"] },
+  { name:"Front Jerk", bucket:"Ballistic", subcategory:"jerk", start:"order", end:"order", modes:["single","double"] },
+  { name:"Two-Handed Front Jerk", bucket:"Ballistic", subcategory:"jerk", start:"order", end:"order", modes:["2h"] },
+  { name:"Shoulder Park Front Jerk", bucket:"Ballistic", subcategory:"jerk", start:"shoulder", end:"shoulder", modes:["single","double"] },
+  { name:"Two-Handed Shoulder Park Front Jerk", bucket:"Ballistic", subcategory:"jerk", start:"shoulder", end:"shoulder", modes:["2h"] },
+  { name:"Front Clean + Jerk", bucket:"Ballistic", subcategory:"jerk", start:"ready", end:"order", modes:["single","double"] },
+  { name:"Side Torch Jerk", bucket:"Ballistic", subcategory:"jerk", start:"torch", end:"torch", modes:["2h"] },
+  { name:"Side Jerk", bucket:"Ballistic", subcategory:"jerk", start:"guard", end:"guard", modes:["2h"] },
+  { name:"Shoulder Park Side Jerk", bucket:"Ballistic", subcategory:"jerk", start:"shoulder", end:"shoulder", modes:["2h"] },
+  { name:"Side Clean + Jerk", bucket:"Ballistic", subcategory:"jerk", start:"ready", end:"guard", modes:["2h"] },
+
+  { name:"Front Torch Snatch", bucket:"Ballistic", subcategory:"snatch", start:"torch", end:"torch", modes:["single","double"] },
+  { name:"Two-Handed Front Torch Snatch", bucket:"Ballistic", subcategory:"snatch", start:"torch", end:"torch", modes:["2h"] },
+  { name:"Front Snatch", bucket:"Ballistic", subcategory:"snatch", start:"ready", end:"torch", modes:["single","double"] },
+  { name:"Two-Handed Front Snatch", bucket:"Ballistic", subcategory:"snatch", start:"ready", end:"torch", modes:["2h"] },
+  { name:"Side Torch Snatch", bucket:"Ballistic", subcategory:"snatch", start:"torch", end:"torch", modes:["single","double"] },
+  { name:"Side Snatch", bucket:"Ballistic", subcategory:"snatch", start:"ready", end:"torch", modes:["single","double"] },
+
+  { name:"Torch Press", bucket:"Grinding", subcategory:"press", start:"torch", end:"torch", modes:["single","double"] },
+  { name:"Two-Handed Torch Press", bucket:"Grinding", subcategory:"press", start:"torch", end:"torch", modes:["2h"] },
+  { name:"Front Press", bucket:"Grinding", subcategory:"press", start:"order", end:"order", modes:["single","double"] },
+  { name:"Two-Handed Front Press", bucket:"Grinding", subcategory:"press", start:"order", end:"order", modes:["2h"] },
+  { name:"Flag Press", bucket:"Grinding", subcategory:"press", start:"flag", end:"flag", modes:["single","double"] },
+  { name:"Two-Handed Flag Press", bucket:"Grinding", subcategory:"press", start:"flag", end:"flag", modes:["2h"] },
+  { name:"Side Torch Press", bucket:"Grinding", subcategory:"press", start:"torch", end:"torch", modes:["single","double"] },
+  { name:"Side Press", bucket:"Grinding", subcategory:"press", start:"guard", end:"guard", modes:["single","double"] },
+  { name:"Side Flag Press", bucket:"Grinding", subcategory:"press", start:"flag", end:"flag", modes:["single","double"] },
+  { name:"Clean and Press", bucket:"Grinding", subcategory:"press", start:"ready", end:"order", modes:["single","double"] },
+
+  { name:"Wrist Cast", bucket:"Grinding", subcategory:"cast", start:"order", end:"order", modes:["single","double"] },
+  { name:"Two Handed Wrist Cast - The Crowbar", bucket:"Grinding", subcategory:"cast", start:"order", end:"order", modes:["2h"] },
+  { name:"Arm Cast", bucket:"Grinding", subcategory:"cast", start:"order", end:"order", modes:["single","double"] },
+  { name:"Alternating Arm Cast - Drumming Cast", bucket:"Grinding", subcategory:"cast", start:"order", end:"order", modes:["double"] },
+  { name:"Two-Handed Arm Cast - The Gama Cast", bucket:"Grinding", subcategory:"cast", start:"order", end:"order", modes:["2h"] },
+  { name:"Two-Handed Arm Cast Circular Pivot", bucket:"Grinding", subcategory:"cast", start:"order", end:"order", modes:["2h"] },
+  { name:"Two-Handed Arm Cast to Flag Position - The Barbarian", bucket:"Grinding", subcategory:"cast", start:"order", end:"flag", modes:["2h"] },
+  { name:"Shoulder Cast", bucket:"Grinding", subcategory:"cast", start:"shoulder", end:"shoulder", modes:["single","double"] },
+  { name:"Two-Handed Shoulder Cast", bucket:"Grinding", subcategory:"cast", start:"shoulder", end:"shoulder", modes:["2h"] },
+  { name:"Shoulder Cast to Side Flag Position - The Muscle Out", bucket:"Grinding", subcategory:"cast", start:"shoulder", end:"flag", modes:["single","double"] },
+  { name:"Double Shoulder Cast - The Crucifix", bucket:"Grinding", subcategory:"cast", start:"shoulder", end:"shoulder", modes:["double"] },
+  { name:"Alternating Shoulder Cast - The Kodo Cast", bucket:"Grinding", subcategory:"cast", start:"shoulder", end:"shoulder", modes:["double"] },
+  { name:"Head Cast", bucket:"Grinding", subcategory:"cast", start:"back", end:"back", modes:["single","double"] },
+  { name:"Shoulder Cast Leverage Hold Variation", bucket:"Grinding", subcategory:"cast", start:"shoulder", end:"shoulder", modes:["single","double"] },
+  { name:"Alternating Head Cast - The See-Saw", bucket:"Grinding", subcategory:"cast", start:"back", end:"back", modes:["double"] },
+  { name:"Two-Handed Head Cast", bucket:"Grinding", subcategory:"cast", start:"back", end:"back", modes:["2h"] },
+  { name:"Shield Cast", bucket:"Grinding", subcategory:"cast", start:"flag", end:"flag", modes:["single","double"] },
+  { name:"Two-Handed Shield Cast", bucket:"Grinding", subcategory:"cast", start:"flag", end:"flag", modes:["2h"] },
+  { name:"Parry Cast", bucket:"Grinding", subcategory:"cast", start:"flag", end:"flag", modes:["single","double"] },
+  { name:"Reverse Parry Cast", bucket:"Grinding", subcategory:"cast", start:"flag", end:"flag", modes:["single","double"] },
+  { name:"Two-Handed Parry Cast", bucket:"Grinding", subcategory:"cast", start:"flag", end:"flag", modes:["2h"] },
+
+  { name:"Shouldered Squat", bucket:"Grinding", subcategory:"lower", start:"shoulder", end:"shoulder", modes:["single","double","2h"] },
+  { name:"Barbarian Squat", bucket:"Grinding", subcategory:"lower", start:"flag", end:"flag", modes:["single","double","2h"] },
+  { name:"Forward Lunge", bucket:"Grinding", subcategory:"lower", start:"order", end:"order", modes:["single","double","2h"] },
+  { name:"Reverse Lunge", bucket:"Grinding", subcategory:"lower", start:"order", end:"order", modes:["single","double","2h"] },
+  { name:"Side Lunge", bucket:"Grinding", subcategory:"lower", start:"order", end:"order", modes:["single","double","2h"] },
+  { name:"Cossack Squat", bucket:"Grinding", subcategory:"lower", start:"order", end:"order", modes:["single","double","2h"] },
+  { name:"Curtsy Lunge", bucket:"Grinding", subcategory:"lower", start:"order", end:"order", modes:["single","double","2h"] }
+];
+
+const CLUB_EXERCISE_DESCRIPTIONS = {
+  "Front Swing": "The foundational swing. Start from Ready Position with a straight spine, hips folded, shoulders packed, and arms locked. Drive the movement with the hips and legs, not by pulling with the arms. The Clubbell swings forward in a smooth arc.",
+  "Two-Handed Front Swing": "The two-handed version of the Front Swing. Use the same hip-driven mechanics, but pay extra attention to floor clearance during the backswing. Keep the spine long and fold from the hips.",
+  "Side Swing": "The lateral swing foundation. Instead of a front-to-back hip snap, use hip sway and lateral hip snap to move the Clubbell side-to-side. Keep the spine aligned and absorb the backswing with the hips.",
+  "Side Semi Circle Swing": "A side-to-side half-circle swing. The Clubbell travels from one side to the other, passing low through the center. Absorb with hip sway and redirect into the opposite side.",
+  "Pirouette Swing": "A high-skill Front Swing variation where the Clubbell rises overhead and becomes briefly weightless while you pivot-step. Requires strong overhead control and safe footwork.",
+  "Front Pendulum": "Starts and finishes in Order Position. Cast the Clubbell out and down into a front swing, then use hip snap and leg drive to bring it back up and catch it in Order Position.",
+  "Two-Handed Front Pendulum": "The two-handed version of the Front Pendulum. The main challenge is controlling the Clubbell between the legs and coordinating both hands evenly.",
+  "Inside Pendulum": "A side pendulum that crosses the centerline. Cast the Clubbell across the body, let it swing down and through, then use hip sway and hip snap to return it to Order Position.",
+  "Double Side Pendulum": "A two-Clubbell side pendulum. Both Clubbells move in side pendulum patterns, requiring timing, symmetry, and clean shock absorption.",
+  "Two-Handed Guard Inside Pendulum": "A two-handed inside pendulum starting and finishing in Guard Position. The Clubbell crosses the centerline, and the hips/legs drive and absorb the movement.",
+  "Outside Pendulum": "Similar to the Inside Pendulum, but the Clubbell casts to the outside instead of across the centerline. The Clubbell travels farther from your root, making control harder.",
+  "Two-Handed Guard Outside Pendulum": "A two-handed outside pendulum from Guard Position. Cast to the same side rather than across the body, then catch back into Guard.",
+  "Lunge-Step Pendulum": "A Front Pendulum with a forward lunge step during the float phase. Catch in Order Position while absorbing into the lunge, then drive back to standing.",
+  "Two-Handed Guard Lunge-Step Pendulum": "A two-handed Guard Pendulum combined with a lunge step. Requires strong timing because the Clubbell, both hands, and split stance must coordinate.",
+  "Side-Step Pendulum": "A Side Pendulum with side-stepping footwork. Step as the Clubbell floats, then catch in Order Position while rooting into the side step.",
+  "Two-Handed Guard Side-Step Pendulum": "A two-handed Guard Side-Step Pendulum. Combines Guard Position, lateral stepping, hip root, and two-handed Clubbell control.",
+  "Front Circle": "The foundational circle. Start in Torch Position, move the Clubbell forward and down in a full circle, then return to Torch Position with control.",
+  "Front 3/4 Circle": "A preparatory drill for the Front Circle. The Clubbell descends from Torch Position but does not complete the full circle; it teaches control and absorption.",
+  "Back Circle": "A circle launched backward from Torch Position. Requires shoulder mobility and control while keeping the torso from over-rotating.",
+  "Back 3/4 Circle": "A preparatory back-circle drill. The Clubbell travels through most of the backward circle but stops short of a full loop, building control, shoulder pack, and safe absorption.",
+  "Inside Circle": "A side-plane circle that crosses the centerline. The goal is to keep the Clubbell in the side plane and avoid turning it into a Front Circle.",
+  "Outside Circle": "A side-plane circle launched to the outside. The Clubbell stays outside the centerline, requiring strong root and careful torso control.",
+  "Two-Handed Side Circle": "A two-handed side circle. Depending on grip and direction, it can behave like an inside or outside circle. Use hip sway and hip snap to maintain the arc.",
+  "Alternating Circles: Front Stroke and Backstroke": "One Clubbell stays overhead in Torch Position while the other circles. Front Stroke circles forward; Backstroke circles backward. Keep both shoulders packed.",
+  "Front Clean to Order Position": "The foundational clean. From Ready Position, drive through the hips and legs, pull the Clubbell upward, rotate the neck under the barrel head, and catch in Order Position.",
+  "Two-Handed Front Clean to Order Position": "A two-handed clean to Order Position. Pull the Clubbell up the centerline without letting one hand dominate.",
+  "Front Clean to Shoulder Park": "A front clean caught on the shoulder. The Clubbell must land softly on the trapezius, not crash into the body.",
+  "Two-Handed Front Clean to Shoulder Park": "The two-handed version. Use both hands to decelerate the Clubbell smoothly into Shoulder Park.",
+  "Front Clean to Flag Position": "A front clean that finishes with the Clubbell punched out into Flag Position. Requires full arm lock and strong shoulder pack.",
+  "Two-Handed Front Clean to Flag Position": "A two-handed clean to Flag Position. Both hands punch the Clubbell out and stabilize it at horizontal lockout.",
+  "Front Clean to Back Position": "A front clean that threads the Clubbell into Back Position. Requires control around the head, ear, and shoulder.",
+  "Two-Handed Front Clean to Back Position": "A two-handed clean into Back Position. The far arm threads over the head while the near arm guides the Clubbell into place.",
+  "Side Clean to Guard Position": "The lateral clean foundation. Use hip sway and lateral hip snap to bring the Clubbell up and catch it in Guard Position.",
+  "Side Clean to Shoulder Park": "A side clean caught in Shoulder Park on the same side. Requires a faster rotation and a soft landing on the shoulder.",
+  "Side Clean to Back Position": "A side clean that continues into Back Position. More complex because the Clubbell travels through a larger arc.",
+  "Side Clean to Side Flag": "Also known as a Muscle Out. A side clean that finishes in Side Flag Position with the arms locked horizontally.",
+  "Front Torch Jerk": "From Order Position, dip, drive with the legs, let the Clubbell float, then dip under and lock it in Torch Position.",
+  "Two-Handed Front Torch Jerk": "The two-handed version. The main challenge is locking both arms evenly, especially the short arm.",
+  "Front Jerk": "A front jerk finishing in an angled overhead Leverage Hold instead of vertical Torch Position. Grip and wrist control are heavily challenged.",
+  "Two-Handed Front Jerk": "A two-handed front jerk into an overhead Leverage Hold. One hand stabilizes while the other helps drive and balance the Clubbell.",
+  "Shoulder Park Front Jerk": "Starts from Shoulder Park and drives the Clubbell overhead to the front. First clear the head and ear, then lock out overhead.",
+  "Two-Handed Shoulder Park Front Jerk": "A two-handed jerk from Shoulder Park. Requires both legs to drive evenly rather than simply pressing with the near side.",
+  "Front Clean + Jerk": "A Front Clean followed immediately by a Jerk. Clean to Order Position, absorb, then use the elastic rebound to drive overhead.",
+  "Side Torch Jerk": "Starts from Guard Position and finishes in Torch Position. Rotate, dip, drive, then root and lock overhead.",
+  "Side Jerk": "A side-plane jerk finishing in an angled overhead Leverage Hold. Requires deep hip root and strong grip.",
+  "Shoulder Park Side Jerk": "Starts from Shoulder Park and projects the Clubbell across the body into an overhead hold. Clear the head first, then drive and lock.",
+  "Side Clean + Jerk": "A Side Clean to Guard Position followed immediately by a Side Jerk. Catch, rebound, drive, root, and lock.",
+  "Front Torch Snatch": "From Ready Position, drive the Clubbell upward in one continuous movement and catch overhead in Torch Position. Uses hip/leg drive and a dip under the floating Clubbell.",
+  "Two-Handed Front Torch Snatch": "A two-handed snatch to Torch Position. Requires strong coordination between long arm and short arm to reach clean lockout.",
+  "Front Snatch": "A front snatch finishing in an angled overhead Leverage Hold instead of vertical Torch. Grip strength and timing are critical.",
+  "Two-Handed Front Snatch": "A two-handed front snatch into an overhead Leverage Hold. Pull up the centerline, rotate during float, and lock out with control.",
+  "Side Torch Snatch": "The lateral snatch to Torch Position. Use hip sway, lateral hip snap, and a dip under the Clubbell to catch overhead.",
+  "Side Snatch": "A side snatch finishing in an angled overhead Leverage Hold. More demanding on grip, hip root, and side-plane control.",
+  "Torch Press": "The foundational press. From Order Position, press the Clubbell to vertical Torch Position with full arm lock and shoulder pack.",
+  "Two-Handed Torch Press": "A two-handed press to Torch Position. The short arm must reach proper lockout, so weight and choke depth must be manageable.",
+  "Front Press": "A press from Order Position into an angled overhead Leverage Hold. Requires strong grip and controlled shoulder packing.",
+  "Two-Handed Front Press": "A two-handed Front Press. One hand acts more like a fulcrum while the other helps drive the Clubbell into position.",
+  "Flag Press": "Presses from Order Position into horizontal Flag Position. Requires strong core, shoulder pack, and elbow-pit rotation upward.",
+  "Two-Handed Flag Press": "A two-handed press into Flag Position. Requires both arms to lock while stabilizing the Clubbell horizontally.",
+  "Side Torch Press": "Starts from Guard Position and presses across the centerline into Torch Position. Uses side hip root for support.",
+  "Side Press": "A side-plane press into an angled overhead Leverage Hold. The body roots to the side while the Clubbell is pressed overhead.",
+  "Side Flag Press": "Presses from Guard Position into Side Flag Position. Combines side root, rotation, horizontal lockout, and strong grip.",
+  "Clean and Press": "A Clean followed by a Press. The clean may finish in Order, Guard, or Shoulder Park, and the press may go to Torch, Front, or Flag.",
+  "Wrist Cast": "A local cast controlled mainly by the wrist and grip. The elbow stays relatively fixed while the Clubbell moves down toward the upper arm and back up.",
+  "Two Handed Wrist Cast - The Crowbar": "A two-handed wrist cast from Guard Position. Both hands create opposing pressure to control the Clubbell like a lever.",
+  "Two-Handed Wrist Cast - The Crowbar": "A two-handed wrist cast from Guard Position. Both hands create opposing pressure to control the Clubbell like a lever.",
+  "Arm Cast": "Moves from Back Position over the shoulder to Order Position. The Clubbell passes beside the ear, not over the head.",
+  "Alternating Arm Cast - Drumming Cast": "Two Clubbells alternate Arm Casts. One casts while the other waits or moves in opposition in the advanced version.",
+  "Two-Handed Arm Cast - The Gama Cast": "A two-handed Arm Cast. One forearm threads over the head while the Clubbell moves from Order to Back Position and back.",
+  "Two-Handed Arm Cast Circular Pivot": "A cyclical two-handed Arm Cast that pivots between sides, allowing the Clubbell to move continuously around the shoulders.",
+  "Two-Handed Arm Cast to Flag Position - The Barbarian": "Casts from Back Position directly into Flag Position. Requires powerful core lock and full horizontal arm lockout.",
+  "Shoulder Cast": "Starts in Back Position and casts the Clubbell out to the side. The elbow flares toward the cast direction while the lat helps pull and control.",
+  "Two-Handed Shoulder Cast": "A two-handed cast from Guard Position to Guard Position. The Clubbell passes close to the head and shoulder through a tight arc.",
+  "Shoulder Cast to Side Flag Position - The Muscle Out": "A Shoulder Cast finishing in Side Flag Position. Requires deep hip root, no spinal collapse, and strong horizontal lockout.",
+  "Double Shoulder Cast - The Crucifix": "Two Clubbells cast outward in opposite directions. Timing is key so the Clubbells do not collide.",
+  "Alternating Shoulder Cast - The Kodo Cast": "Two Clubbells alternate Shoulder Casts to Side Flag. One side casts, returns, then the other side casts.",
+  "Head Cast": "Moves from Back Position directly overhead to Torch Position or Leverage Hold. Requires strong core drive and careful head clearance.",
+  "Shoulder Cast Leverage Hold Variation": "A Head Cast variation that stops in an angled Leverage Hold instead of going all the way to Torch Position.",
+  "Alternating Head Cast - The See-Saw": "Two Clubbells alternate between Back Position and overhead. One goes up while the other comes down in the advanced version.",
+  "Two-Handed Head Cast": "A two-handed Head Cast from Back Position to Torch Position. Requires strong launch and careful control around the head.",
+  "Shield Cast": "An advanced cast blending Arm, Shoulder, and Head Cast elements. The Clubbell moves around the back and shoulders through a shield-like path.",
+  "Two-Handed Shield Cast": "A two-handed Shield Cast moving from one Guard Position through Back Position to the opposite Guard Position.",
+  "Parry Cast": "A complex cast moving through multiple planes. It can also function as a recovery path to return the Clubbell safely to Floor Park.",
+  "Reverse Parry Cast": "The reverse direction of the Parry Cast. It winds the Clubbell around the opposite shoulder path before returning to Floor Park.",
+  "Two-Handed Parry Cast": "A two-handed Parry Cast where each arm performs a different directional role. Requires mastery of the one-handed Parry and Reverse Parry first.",
+  "Shouldered Squat": "A squat with the Clubbell parked on the shoulder. Keep the torso organized, brace the trunk, and squat without letting the load collapse the spine.",
+  "Barbarian Squat": "A squat with the Clubbell held in Flag/Barbarian-style position. Requires strong core tension, shoulder pack, and controlled squat depth.",
+  "Forward Lunge": "A forward lunge while holding the Clubbell in the selected position. Step forward, absorb with control, keep the trunk tall, and drive back to standing.",
+  "Reverse Lunge": "A reverse lunge while holding the Clubbell. Step back, lower under control, keep the front leg rooted, and return to standing without twisting.",
+  "Side Lunge": "A lateral lunge with the Clubbell held stable. Shift the hips to one side, keep the opposite leg long, then drive back through the working leg.",
+  "Cossack Squat": "A side-to-side squat with one leg bent and the other extended. Keep the Clubbell stable while the hips move low and laterally.",
+  "Curtsy Lunge": "A diagonal/rear-crossing lunge. Step behind and across the body, keep the pelvis controlled, and return to standing without collapsing into the hip."
+};
+
+const BUCKET_ORDER = ["Rhythmic", "Ballistic", "Grinding"];
+const SUBCATEGORY_ORDER = {
+  Rhythmic:["swing","pendulum","circle"],
+  Ballistic:["clean","jerk","snatch"],
+  Grinding:["press","cast","lower"]
+};
+
+function rand(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function shuffle(arr) {
+  const a = arr.slice();
+  for(let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+function cleanText(value) {
+  return String(value ?? "")
+    .replace(/[â€“â€”]/g, "-")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+function clubCompatible(exercise, clubType) {
+  const modes = exercise.modes || ["single","double"];
+  if(clubType === "single") return modes.includes("single");
+  if(clubType === "double") return modes.includes("double");
+  if(clubType === "2h") return modes.includes("2h");
+  return true;
+}
+function getEnabledClubTypes() {
+  const types = [];
+  if(document.getElementById("single").checked) types.push("single");
+  if(document.getElementById("double").checked) types.push("double");
+  if(document.getElementById("twohand").checked) types.push("2h");
+  return types.length ? types : ["single"];
+}
+function getDuration() {
+  const v = document.getElementById("duration").value;
+  return v === "random" ? rand([15,20,25,30]) : Number(v);
+}
+function getCount(bucket) {
+  const id = bucket === "Rhythmic" ? "rhythmicCount" : bucket === "Ballistic" ? "ballisticCount" : "grindingCount";
+  return Math.max(1, Math.min(3, Number(document.getElementById(id).value) || 1));
+}
+function pickSubcategories(bucket, count, clubType) {
+  const order = SUBCATEGORY_ORDER[bucket] || [];
+  const usable = order.filter(sub => CLUB_EXERCISES.some(ex => ex.bucket === bucket && ex.subcategory === sub && clubCompatible(ex, clubType)));
+  const base = usable.length ? usable : order;
+  if(count >= base.length) return base.slice(0, count);
+  return shuffle(base).slice(0, count);
+}
+function pickExercise(bucket, subcategory, clubType, alreadyPicked) {
+  let pool = CLUB_EXERCISES.filter(ex => ex.bucket === bucket && ex.subcategory === subcategory && clubCompatible(ex, clubType));
+  if(!pool.length) pool = CLUB_EXERCISES.filter(ex => ex.bucket === bucket && ex.subcategory === subcategory);
+  if(pool.length > 1) {
+    const fresh = pool.filter(ex => !alreadyPicked.has(ex.name));
+    if(fresh.length) pool = fresh;
+  }
+  return pool.length ? rand(pool) : null;
+}
+function buildWorkout() {
+  const enabled = getEnabledClubTypes();
+  const clubType = rand(enabled);
+  const duration = getDuration();
+  const pickedNames = new Set();
+  const buckets = {};
+
+  BUCKET_ORDER.forEach(bucket => {
+    const count = getCount(bucket);
+    const subs = pickSubcategories(bucket, count, clubType);
+    buckets[bucket] = subs.map(sub => {
+      const ex = pickExercise(bucket, sub, clubType, pickedNames);
+      if(ex) pickedNames.add(ex.name);
+      return ex ? {...ex} : null;
+    }).filter(Boolean);
+  });
+
+  return { clubType, duration, buckets };
+}
+function getDescription(name) {
+  return CLUB_EXERCISE_DESCRIPTIONS[name] || "No short description has been added for this exercise yet.";
+}
+function renderWorkout(workout) {
+  const totalExercises = BUCKET_ORDER.reduce((sum, bucket) => sum + (workout.buckets[bucket] || []).length, 0);
+  const order = BUCKET_ORDER.flatMap(bucket => workout.buckets[bucket] || []);
+  const output = document.getElementById("output");
+  output.className = "";
+  output.innerHTML = `
+    <div class="workout-head">
+      <div>
+        <h2>Generated workout</h2>
+        <div class="big">${workout.duration} min</div>
+        <p class="small">Club type: ${workout.clubType.toUpperCase()} | Exercises: ${totalExercises}</p>
+      </div>
+      <span class="pill">Quality circuit</span>
+    </div>
+    <div class="warn" style="margin-top:14px;">
+      Work through the list in order, cycling calmly for the selected time. Rest as needed. Keep reps smooth; switch or stop when technique slows down.
+    </div>
+    <div class="stack" style="margin-top:14px;">
+      ${BUCKET_ORDER.map(bucket => `
+        <div>
+          <div class="bucket-title">
+            <strong>${bucket === "Grinding" ? "Grind" : bucket}</strong>
+            <span class="pill">${(workout.buckets[bucket] || []).length} exercise(s)</span>
+          </div>
+          <div class="stack">
+            ${(workout.buckets[bucket] || []).map((ex, idx) => `
+              <details class="exercise">
+                <summary>
+                  <div>
+                    <div class="ex-title">${idx + 1}. ${cleanText(ex.name)}</div>
+                    <div class="ex-meta">${cleanText(ex.subcategory)} | modes: ${(ex.modes || []).map(m => m.toUpperCase()).join(", ")}</div>
+                  </div>
+                </summary>
+                <div class="ex-body">${cleanText(getDescription(ex.name))}</div>
+              </details>
+            `).join("")}
+          </div>
+        </div>
+      `).join("")}
+    </div>
+    <div class="group" style="margin-top:14px;">
+      <div class="label">Order</div>
+      <p>${order.map(ex => cleanText(ex.name)).join(" → ")}</p>
+    </div>
+  `;
+  window.currentWorkoutText = [
+    `CST one-off workout - ${workout.duration} min - ${workout.clubType.toUpperCase()}`,
+    ...BUCKET_ORDER.flatMap(bucket => [
+      "",
+      bucket === "Grinding" ? "Grind:" : bucket + ":",
+      ...(workout.buckets[bucket] || []).map((ex, i) => `${i + 1}. ${cleanText(ex.name)} (${ex.subcategory})`)
+    ]),
+    "",
+    "Order:",
+    order.map(ex => cleanText(ex.name)).join(" -> ")
+  ].join("\n");
+}
+document.getElementById("generateBtn").addEventListener("click", () => renderWorkout(buildWorkout()));
+document.getElementById("copyBtn").addEventListener("click", async () => {
+  if(!window.currentWorkoutText) renderWorkout(buildWorkout());
+  try { await navigator.clipboard.writeText(window.currentWorkoutText); }
+  catch(e) { alert(window.currentWorkoutText); }
+});
+document.getElementById("resetBtn").addEventListener("click", () => {
+  const output = document.getElementById("output");
+  output.className = "empty";
+  output.innerHTML = `<h2>Your workout</h2><p>Choose the checkboxes and press Generate workout.</p>`;
+  window.currentWorkoutText = "";
+});
+</script>
+</body>
+</html>
